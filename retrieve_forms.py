@@ -13,11 +13,24 @@ password = b
 form_ids = f
 
 # API base URL
-api_base_url = 'https://intralog.com.ar/wp-json/custom/v1/form-submissions/'
+api_url = 'https://intralog.com.ar/wp-json/custom/v1/form-submissions/'
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Define column renaming mapping
+column_renaming = {
+    'id': 'ID',
+    'created_at': 'Creation Date',
+    'updated_at': 'Update Date',
+    'Razón Social': 'Company Name',
+    'Nombre y Apellido': 'Full Name',
+    'Teléfono': 'Phone',
+    'Correo electrónico': 'Email',
+    'Completa tu mensaje': 'Message',
+    'Me interesa el servicio': 'Interested Service'
+}
 
 def get_form_submissions(api_url, username, password):
     try:
@@ -38,6 +51,9 @@ def get_form_submissions(api_url, username, password):
 
 def save_to_excel(data, output_file):
     try:
+        # Rename columns according to the mapping
+        data = data.rename(columns=column_renaming)
+
         if not os.path.exists(output_file):
             # Save new data to a new workbook
             data.to_excel(output_file, index=False, engine='openpyxl')
@@ -51,6 +67,9 @@ def save_to_excel(data, output_file):
             data_rows = list(sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True))
             headers = [cell.value for cell in sheet[1]]
             existing_df = pd.DataFrame(data_rows, columns=headers)
+            
+            # Rename columns in existing DataFrame
+            existing_df = existing_df.rename(columns=column_renaming)
             
             # Debug prints
             logger.info(f"Existing data headers: {existing_df.columns.tolist()}")
@@ -67,7 +86,7 @@ def save_to_excel(data, output_file):
             
             # Write the headers if they are not already present
             if not existing_df.empty:
-                for c_idx, header in enumerate(headers, 1):
+                for c_idx, header in enumerate(updated_df.columns, 1):
                     sheet.cell(row=1, column=c_idx, value=header)
             
             # Write the updated rows to the sheet
@@ -85,7 +104,7 @@ def main():
     all_data = pd.DataFrame()  # Initialize an empty DataFrame to hold all form submissions
     
     for form_id in form_ids:
-        api_url = f'{api_base_url}{form_id}'
+        api_url = f'{api_url}{form_id}'
         data = get_form_submissions(api_url, username, password)
         if data:
             form_submissions = data.get('form_submissions', [])
