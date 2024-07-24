@@ -1,3 +1,3 @@
 usrnm = 'ftorres'
 passw = 'RKFX LICa Boce NAnc bVhK QcOr'
-frmids = [4]
+frmids = [7, 3, 4]
