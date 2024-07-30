@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create an empty DataFrame with the specified columns
-columns = ["Empresa", "submission id", "Fecha creacion", "Fecha actualizacion", "Razon social", "Nombre y apellido", "Telefono", "Mail", "Mensaje", "Servicio", "form_id"]
+columns = ["Empresa", "Fecha creacion", "Razon social", "Nombre y apellido", "Servicio", "Mail", "Telefono", "Origen", "Sub-origen", "Mensaje", "Avance", "Estado", "form_id", "submission id"]
 df_template = pd.DataFrame(columns=columns)
 
 def get_form_submissions(api_url, username, password):
@@ -38,20 +38,37 @@ def get_form_submissions(api_url, username, password):
         return None
 
 def process_submission(submission, form_id):
+    servicio = submission.get('Me interesa el servicio' if form_id in [3, 4, 5] else 'Ubicación')
+    avance, estado = determine_avance_estado(servicio, form_id)
+
+    
     processed = {
         "Empresa": "INTRALOG" if form_id in [3, 4, 5] else "INTRAPAL",
         "submission id": submission.get('id'),
         "Fecha creacion": submission.get('created_at'),
-        "Fecha actualizacion": submission.get('updated_at'),
+        # "Fecha actualizacion": submission.get('updated_at'),
         "Razon social": submission.get('Razón social' if form_id != 7 else 'Razón social'),
         "Nombre y apellido": submission.get('Razón social' if form_id == 3 else 'Nombre y Apellido'),
         "Telefono": submission.get('Teléfono' if form_id != 7 else 'Telefono'),
         "Mail": submission.get('Mail' if form_id in [3, 4, 5] else 'E-Mail'),
         "Mensaje": submission.get('Mensaje' if form_id in [3, 4, 5] else 'Mensaje'),
-        "Servicio": submission.get('Me interesa el servicio' if form_id in [3, 4, 5] else 'Ubicación'),
+        "Servicio": servicio,
+        "Origen" : "Web",
+        "Sub-origen" : "Signos",
+        "Avance": avance,
+        "Estado": estado,
         "form_id": form_id
     }
     return processed
+
+def determine_avance_estado(servicio, form_id):
+    if form_id != 7:
+        if servicio == "Busco trabajo/ Ofrezco productos o servicios":
+            return "▓", "negativo"
+        else:
+            return "⊕", "esperando datos"
+    else:
+        return "⊕", "esperando datos"
 
 def save_to_excel(data, output_file):
     if not os.path.exists(output_file):
