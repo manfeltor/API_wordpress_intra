@@ -41,16 +41,25 @@ def process_submission(submission, form_id):
     servicio = submission.get('Me interesa el servicio' if form_id in [3, 4, 5] else 'Ubicación')
     avance, estado = determine_avance_estado(servicio, form_id)
 
+    if form_id in [4, 5]:
+        razon_social_key = "Razón Social"
+        email_key = "Correo electrónico"
+    else:
+        if form_id == 3:
+            email_key = "E-mail"
+        else:
+            email_key = "E-Mail"
+        razon_social_key = "Razón social"
     
     processed = {
         "Empresa": "INTRALOG" if form_id in [3, 4, 5] else "INTRAPAL",
         "submission id": submission.get('id'),
         "Fecha creacion": submission.get('created_at'),
         # "Fecha actualizacion": submission.get('updated_at'),
-        "Razon social": submission.get('Razón social' if form_id != 7 else 'Razón social'),
+        "Razon social": submission.get(razon_social_key),
         "Nombre y apellido": submission.get('Razón social' if form_id == 3 else 'Nombre y Apellido'),
-        "Telefono": submission.get('Teléfono' if form_id != 7 else 'Telefono'),
-        "Mail": submission.get('Mail' if form_id in [3, 4, 5] else 'E-Mail'),
+        "Telefono": submission.get('Teléfono' if form_id != 3 else 'Telefono'),
+        "Mail": submission.get(email_key),
         "Mensaje": submission.get('Mensaje' if form_id in [3, 4, 5] else 'Mensaje'),
         "Servicio": servicio,
         "Origen" : "Web",
